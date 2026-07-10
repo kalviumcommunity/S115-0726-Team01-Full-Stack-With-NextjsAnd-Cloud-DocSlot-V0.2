@@ -32,40 +32,6 @@ model User {
   phone     String?
   role      Role
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  doctor    Doctor?
-  patient   Patient?
-}
-
-model Doctor {
-  id              String       @id @default(cuid())
-  userId          String       @unique
-  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  specialization  String
-  qualifications  String?
-  bio             String?
-  consultationFee Decimal      @db.Decimal(10, 2)
-  status          DoctorStatus @default(PENDING)
-
-  schedules       Schedule[]
-  appointments    Appointment[]
-
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-}
-
-model Patient {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  dateOfBirth DateTime?
-  gender      String?
-
-  appointments Appointment[]
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }
 
 model Schedule {
@@ -81,41 +47,4 @@ model Schedule {
   slots        AppointmentSlot[]
 
   createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  @@index([doctorId, dayOfWeek])
-}
-
-model AppointmentSlot {
-  id         String   @id @default(cuid())
-  scheduleId String
-  schedule   Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
-  date       DateTime
-  startTime  String
-  endTime    String
-  isBooked   Boolean  @default(false)
-
-  appointment Appointment?
-
-  createdAt  DateTime @default(now())
-
-  @@unique([scheduleId, date, startTime])
-}
-
-model Appointment {
-  id        String   @id @default(cuid())
-  patientId String
-  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  doctorId  String
-  doctor    Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-  slotId    String   @unique
-  slot      AppointmentSlot @relation(fields: [slotId], references: [id], onDelete: Cascade)
-  status    AppointmentStatus @default(CONFIRMED)
-  reason    String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([patientId, createdAt])
-  @@index([doctorId, createdAt])
 }
