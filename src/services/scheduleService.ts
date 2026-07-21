@@ -9,6 +9,17 @@ type CreateScheduleInput = {
 };
 
 export async function createWeeklySchedule(input: CreateScheduleInput) {
+  const overlapping = await prisma.schedule.findFirst({
+    where: {
+      doctorId: input.doctorId,
+      dayOfWeek: input.dayOfWeek,
+      isActive: true,
+      startTime: { lt: input.endTime },
+      endTime: { gt: input.startTime },
+    },
+  });
+  if (overlapping) throw new Error("This schedule overlaps an existing weekly schedule");
+
   return prisma.schedule.create({
     data: {
       doctorId: input.doctorId,

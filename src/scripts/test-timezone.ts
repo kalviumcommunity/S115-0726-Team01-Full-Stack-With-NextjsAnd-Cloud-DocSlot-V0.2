@@ -27,6 +27,7 @@ async function main() {
 
   const tomorrowSlot = await prisma.appointmentSlot.create({
     data: {
+      doctorId: doctor.id,
       scheduleId: schedule.id,
       date: tomorrow,
       startTime: "09:00",

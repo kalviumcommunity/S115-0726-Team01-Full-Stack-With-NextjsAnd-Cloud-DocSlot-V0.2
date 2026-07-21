@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev"
+    "prisma:migrate": "prisma migrate dev",
+    "slots:extend": "tsx src/scripts/extend-slot-horizon.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

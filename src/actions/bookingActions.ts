@@ -18,6 +18,10 @@ export async function bookAppointment(input: BookingInput & { patientId: string;
     return { success: false, errors: { slotId: ["This slot no longer exists"] } };
   }
 
+  if (slot.doctorId !== input.doctorId) {
+    return { success: false, errors: { slotId: ["This slot does not belong to the selected doctor"] } };
+  }
+
   if (slot.isBooked) {
     return { success: false, errors: { slotId: ["This slot was just taken — please pick another"] } };
   }
@@ -38,6 +42,10 @@ export async function bookAppointment(input: BookingInput & { patientId: string;
           status: "CONFIRMED",
         },
       });
+    });
+
+    await prisma.appointmentAuditLog.create({
+      data: { appointmentId: appointment.id, action: "BOOKED", actorRole: "PATIENT", actorId: input.patientId, toSlotId: slot.id },
     });
 
     return { success: true, appointmentId: appointment.id };

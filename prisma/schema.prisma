@@ -28,11 +28,13 @@ model Doctor {
   bio             String?
   consultationFee Decimal       @db.Decimal(10, 2)
   status          DoctorStatus  @default(PENDING)
+  timezone        String        @default("UTC")
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   appointments    Appointment[]
   user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   schedules       Schedule[]
+  availabilityExceptions AvailabilityException[]
 }
 
 model Patient {
@@ -64,33 +66,71 @@ model Schedule {
 
 model AppointmentSlot {
   id          String       @id @default(cuid())
-  scheduleId  String
+  doctorId    String
+  scheduleId  String?
+  exceptionId String?
   date        DateTime
   startTime   String
   endTime     String
   isBooked    Boolean      @default(false)
   createdAt   DateTime     @default(now())
-  appointment Appointment?
-  schedule    Schedule     @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+  schedule    Schedule?    @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  exception   AvailabilityException? @relation(fields: [exceptionId], references: [id], onDelete: Cascade)
 
-  @@unique([scheduleId, date, startTime])
+  @@index([doctorId, date, startTime])
+  @@index([doctorId, date])
 }
 
 model Appointment {
   id        String            @id @default(cuid())
   patientId String
   doctorId  String
-  slotId    String            @unique
+  slotId    String
   status    AppointmentStatus @default(CONFIRMED)
   reason    String?
+  cancellationReason String?
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
   doctor    Doctor            @relation(fields: [doctorId], references: [id], onDelete: Cascade)
   patient   Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
   slot      AppointmentSlot   @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  auditLogs AppointmentAuditLog[]
 
   @@index([patientId, createdAt])
   @@index([doctorId, createdAt])
+  @@index([slotId])
+}
+
+model AvailabilityException {
+  id        String            @id @default(cuid())
+  doctorId  String
+  type      AvailabilityExceptionType
+  startDate DateTime
+  endDate   DateTime
+  startTime String?
+  endTime   String?
+  reason    String?
+  createdAt DateTime          @default(now())
+  doctor    Doctor            @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  slots     AppointmentSlot[]
+
+  @@index([doctorId, startDate, endDate])
+}
+
+model AppointmentAuditLog {
+  id            String   @id @default(cuid())
+  appointmentId String
+  action        AppointmentAuditAction
+  actorRole     Role?
+  actorId       String?
+  reason        String?
+  fromSlotId    String?
+  toSlotId      String?
+  createdAt     DateTime @default(now())
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@index([appointmentId, createdAt])
 }
 
 enum Role {
@@ -108,4 +148,21 @@ enum AppointmentStatus {
   CONFIRMED
   CANCELLED
   COMPLETED
+  NO_SHOW
+}
+
+enum AvailabilityExceptionType {
+  LEAVE
+  HOLIDAY
+  BLOCKED
+  EXTRA_HOURS
+}
+
+enum AppointmentAuditAction {
+  BOOKED
+  CANCELLED_BY_PATIENT
+  CANCELLED_BY_DOCTOR
+  RESCHEDULED
+  COMPLETED
+  MARKED_NO_SHOW
 }
